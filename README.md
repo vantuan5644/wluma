@@ -189,12 +189,12 @@ vulkan_device = "/dev/dri/renderD128"
 
 Run `wluma` with `RUST_LOG=debug` and find the `Discovered Vulkan device` entry for the GPU you want to use. Set `vulkan_device` to its `DRM render device` path, such as `/dev/dri/renderD128`; do not use the `DRM primary device` path.
 
-Each brightness change is made in steps spread over `transition_ms` milliseconds (200 by default). A DDC display also waits on every read and write, so a large change there takes a few times longer. Raise it if changes look like visible jumps rather than fades:
+By default each brightness change is made in a fixed number of steps (four on DDC, thirteen on a backlight), and takes as long as the display needs for them; a DDC monitor can take most of a second per step. Set `transition_ms` to have each change take about that long instead: wluma times its steps on that display and sizes them to fit, so a slower display takes fewer, larger steps rather than more time. Raise it if changes look like visible jumps rather than fades:
 
 ```toml
 [[output.ddcutil]]
 name = "DP-1"
-transition_ms = 1000
+transition_ms = 3000
 ```
 
 When the ScreenCast portal is used, select the monitor named in wluma's desktop notification from the screen sharing dialog. wluma asks the portal to persist this selection and stores its restore token in the XDG state directory, so supported portal backends can restore it without prompting after restart. A separate portal session and restore token are used for each configured output.
