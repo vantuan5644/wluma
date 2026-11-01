@@ -9,7 +9,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-const TRANSITION_MAX_MS: u64 = 200;
+const DEFAULT_TRANSITION_MS: u64 = 200;
 
 pub struct Controller {
     brightness: Brightness,
@@ -24,6 +24,7 @@ pub struct Controller {
     idle: Option<u8>,
     paused: Option<Arc<AtomicBool>>,
     resuming: bool,
+    transition_ms: u64,
 }
 
 pub struct Command {
@@ -68,7 +69,13 @@ impl Controller {
             idle: None,
             paused: None,
             resuming: false,
+            transition_ms: DEFAULT_TRANSITION_MS,
         }
+    }
+
+    pub fn with_transition_ms(mut self, transition_ms: u64) -> Self {
+        self.transition_ms = transition_ms;
+        self
     }
 
     pub fn with_control(
@@ -400,7 +407,8 @@ impl Controller {
             (_, Some(current))
                 if desired.abs_diff(current) < self.brightness.change_threshold() => {}
             (_, Some(current)) => {
-                let max_transition_steps = TRANSITION_MAX_MS
+                let max_transition_steps = self
+                    .transition_ms
                     .div_ceil(self.brightness.transition_step_ms())
                     .max(1);
                 let step = if desired > current {
@@ -612,6 +620,20 @@ mod tests {
             (10000, 9473, -3),
             (10000, 8433, -8),
         ];
+
+        for (current, desired, expected_step) in test_cases {
+            controller.current = Some(current);
+            controller.update_target(desired);
+            assert_eq!(Some(target(desired, expected_step)), controller.target);
+        }
+    }
+
+    #[test]
+    fn test_update_target_spreads_steps_over_configured_transition() {
+        let (controller, _, _) = setup(brightness_mock(vec![], vec![]));
+        let mut controller = controller.with_transition_ms(1000);
+
+        let test_cases = vec![(10000, 10413, 1), (10000, 11732, 2), (10000, 8433, -2)];
 
         for (current, desired, expected_step) in test_cases {
             controller.current = Some(current);

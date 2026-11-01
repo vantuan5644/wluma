@@ -161,7 +161,7 @@ name = "HDMI-A-3"
 capturer = "none"
 ```
 
-Explicit `output.backlight` and `output.ddcutil` entries remain supported. The `path` of a backlight entry is optional when its `name` matches a discovered connector. When set, it must point to a sysfs backlight device directory such as `/sys/class/backlight/intel_backlight`. Supplying a path or DDC identifier overrides the discovered value. `enabled`, `capturer`, `vulkan_device`, `predictor` and `gamma` are available for both output types. To exclude a discovered output, set `enabled = false`:
+Explicit `output.backlight` and `output.ddcutil` entries remain supported. The `path` of a backlight entry is optional when its `name` matches a discovered connector. When set, it must point to a sysfs backlight device directory such as `/sys/class/backlight/intel_backlight`. Supplying a path or DDC identifier overrides the discovered value. `enabled`, `capturer`, `vulkan_device`, `predictor`, `gamma` and `transition_ms` are available for both output types. To exclude a discovered output, set `enabled = false`:
 
 ```toml
 [[output.ddcutil]]
@@ -188,6 +188,14 @@ vulkan_device = "/dev/dri/renderD128"
 ```
 
 Run `wluma` with `RUST_LOG=debug` and find the `Discovered Vulkan device` entry for the GPU you want to use. Set `vulkan_device` to its `DRM render device` path, such as `/dev/dri/renderD128`; do not use the `DRM primary device` path.
+
+Each brightness change is made in steps spread over `transition_ms` milliseconds (200 by default). A DDC display also waits on every read and write, so a large change there takes a few times longer. Raise it if changes look like visible jumps rather than fades:
+
+```toml
+[[output.ddcutil]]
+name = "DP-1"
+transition_ms = 1000
+```
 
 When the ScreenCast portal is used, select the monitor named in wluma's desktop notification from the screen sharing dialog. wluma asks the portal to persist this selection and stores its restore token in the XDG state directory, so supported portal backends can restore it without prompting after restart. A separate portal session and restore token are used for each configured output.
 
